@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>StoicGPT</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#080808">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="StoicGPT">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="description" content="Your motivational coach. Say the doubt. Get the flip.">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#080808;--surface:#0f0f0f;--border:#1c1c1c;
+  --iron:#333;--ash:#555;--stone:#777;--bone:#c4beb4;--white:#e6e2db;
+  --dim:rgba(230,226,219,0.06);
+}
+html,body{height:100%;height:100dvh;background:var(--bg);color:var(--white);font-family:'Space Grotesk',sans-serif;overflow:hidden;font-size:15px;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}
+#app{display:flex;flex-direction:column;height:100%;height:100dvh;max-width:720px;margin:0 auto}
+
+/* HEADER */
+header{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--border);flex-shrink:0;background:var(--bg)}
+.header-left{display:flex;align-items:center;gap:12px}
+.wordmark{font-family:'Space Mono',monospace;font-size:14px;font-weight:700;letter-spacing:0.06em;color:var(--white)}
+.vsep{width:1px;height:14px;background:var(--border)}
+.tagline{font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:var(--ash)}
+.header-right{display:flex;align-items:center;gap:16px}
+.stat-block{text-align:right}
+.stat-num{font-family:'Space Mono',monospace;font-size:15px;font-weight:700;color:var(--white);line-height:1}
+.stat-label{font-size:8px;letter-spacing:0.16em;text-transform:uppercase;color:var(--ash);margin-top:2px}
+.pulse-dot{width:7px;height:7px;border-radius:50%;background:#3d6b3d;animation:ping 2.4s ease-in-out infinite}
+@keyframes ping{0%,100%{box-shadow:0 0 0 0 rgba(61,107,61,0.5)}50%{box-shadow:0 0 0 5px rgba(61,107,61,0)}}
+
+/* INSTALL BANNER */
+#install-banner{display:none;align-items:center;justify-content:space-between;background:var(--surface);border-bottom:1px solid var(--border);padding:10px 20px;gap:12px}
+#install-banner.show{display:flex}
+.install-text{font-size:12px;color:var(--bone)}
+.install-text span{color:var(--ash);font-size:11px;display:block;margin-top:2px}
+.install-btn{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--stone);border:1px solid var(--iron);background:transparent;padding:6px 12px;cursor:pointer}
+.install-close{color:var(--ash);font-size:20px;cursor:pointer;padding:0 4px;line-height:1}
+
+/* LANDING */
+#landing{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 24px;position:relative;overflow:hidden}
+.bg-grid{position:absolute;inset:0;background-image:linear-gradient(var(--border) 1px,transparent 1px),linear-gradient(90deg,var(--border) 1px,transparent 1px);background-size:48px 48px;opacity:0.35;mask-image:radial-gradient(ellipse 70% 60% at 50% 50%,black,transparent)}
+.landing-inner{position:relative;z-index:1;text-align:center;display:flex;flex-direction:column;align-items:center}
+.label-top{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:0.3em;text-transform:uppercase;color:var(--ash);margin-bottom:20px}
+.hero-quote{font-size:clamp(20px,5vw,32px);font-weight:600;color:var(--white);letter-spacing:-0.03em;line-height:1.3;max-width:420px;min-height:80px;display:flex;align-items:center;justify-content:center;text-align:center}
+.quote-author{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:var(--ash);margin-top:16px;opacity:0;transition:opacity 0.6s ease}
+.quote-author.visible{opacity:1}
+.divider-line{width:36px;height:1px;background:var(--iron);margin:28px auto}
+.landing-cta{font-size:13px;color:var(--stone);letter-spacing:0.06em}
+.examples-block{margin-top:22px;display:flex;flex-direction:column;gap:5px;align-items:center}
+.ex-item{font-family:'Space Mono',monospace;font-size:11px;color:var(--ash);letter-spacing:0.04em;opacity:0;animation:fadeSlide 0.4s ease forwards}
+@keyframes fadeSlide{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+
+/* CHAT */
+#chat{flex:1;overflow-y:auto;display:none;flex-direction:column;scroll-behavior:smooth;-webkit-overflow-scrolling:touch}
+#chat::-webkit-scrollbar{width:2px}
+#chat::-webkit-scrollbar-thumb{background:var(--iron)}
+.msg-wrap{padding:22px 20px;border-bottom:1px solid var(--border);animation:msgIn 0.22s ease}
+@keyframes msgIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.user-wrap{background:transparent}
+.stoic-wrap{background:var(--dim)}
+.msg-meta{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--ash);margin-bottom:10px;display:flex;align-items:center;gap:10px}
+.msg-meta-bar{width:14px;height:1px;background:var(--iron)}
+.stoic-wrap .msg-meta-bar{background:var(--stone)}
+.msg-text{font-size:15px;line-height:1.7;color:var(--bone);padding-left:24px}
+.stoic-wrap .msg-text{font-size:19px;font-weight:500;color:var(--white);letter-spacing:-0.015em;line-height:1.45}
+.cursor{display:inline-block;width:2px;height:1em;background:var(--stone);vertical-align:text-bottom;margin-left:2px;animation:blink 0.9s step-end infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+
+/* THINKING */
+.thinking-wrap{padding:22px 20px;border-bottom:1px solid var(--border);background:var(--dim)}
+.thinking-inner{display:flex;align-items:center;gap:8px;padding-left:24px}
+.t-bar{width:2px;height:14px;background:var(--stone);animation:tbar 1s ease-in-out infinite}
+.t-bar:nth-child(2){animation-delay:0.15s}
+.t-bar:nth-child(3){animation-delay:0.3s}
+@keyframes tbar{0%,100%{opacity:0.2;transform:scaleY(0.5)}50%{opacity:1;transform:scaleY(1)}}
+
+/* FOOTER */
+footer{flex-shrink:0;border-top:1px solid var(--border);background:var(--bg);padding:12px 20px;padding-bottom:max(16px,env(safe-area-inset-bottom))}
+.input-shell{display:flex;align-items:flex-end;gap:10px;background:var(--surface);border:1px solid var(--border);padding:12px 14px;transition:border-color 0.2s}
+.input-shell:focus-within{border-color:var(--iron)}
+#user-input{flex:1;background:transparent;border:none;outline:none;color:var(--white);font-family:'Space Grotesk',sans-serif;font-size:16px;line-height:1.5;resize:none;min-height:22px;max-height:100px;overflow-y:auto}
+#user-input::placeholder{color:var(--ash)}
+#send-btn{background:transparent;border:1px solid var(--iron);color:var(--stone);font-family:'Space Mono',monospace;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;padding:8px 14px;cursor:pointer;transition:all 0.15s;flex-shrink:0;align-self:flex-end}
+#send-btn:active{border-color:var(--stone);color:var(--bone)}
+#send-btn:disabled{opacity:0.25;cursor:default}
+.footer-meta{display:flex;justify-content:space-between;margin-top:8px}
+.footer-hint{font-size:10px;color:var(--ash)}
+.char-count{font-family:'Space Mono',monospace;font-size:10px;color:var(--iron)}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="install-banner">
+    <div class="install-text">Add to home screen<span>Works as a real app, offline.</span></div>
+    <button class="install-btn" id="install-btn">Install</button>
+    <span class="install-close" id="install-close">×</span>
+  </div>
+
+  <header>
+    <div class="header-left">
+      <span class="wordmark">STOICGPT</span>
+      <div class="vsep"></div>
+      <span class="tagline">Your Coach</span>
+    </div>
+    <div class="header-right">
+      <div class="stat-block">
+        <div class="stat-num" id="session-count">0</div>
+        <div class="stat-label">exchanges</div>
+      </div>
+      <div class="vsep"></div>
+      <div class="stat-block">
+        <div class="stat-num" id="streak-count">0</div>
+        <div class="stat-label">day streak</div>
+      </div>
+      <div class="vsep"></div>
+      <div class="pulse-dot"></div>
+    </div>
+  </header>
+
+  <div id="chat"></div>
+
+  <div id="landing">
+    <div class="bg-grid"></div>
+    <div class="landing-inner">
+      <div class="label-top">Motivational Coach</div>
+      <div class="hero-quote" id="hero-quote"></div>
+      <div class="quote-author" id="quote-author"></div>
+      <div class="divider-line"></div>
+      <div class="landing-cta">Say what's in your way.</div>
+      <div class="examples-block" id="examples-block"></div>
+    </div>
+  </div>
+
+  <footer>
+    <div class="input-shell">
+      <textarea id="user-input" rows="1" placeholder="What if..." maxlength="300"></textarea>
+      <button id="send-btn" onclick="handleSend()">Send ↵</button>
+    </div>
+    <div class="footer-meta">
+      <span class="footer-hint">Say the doubt. Get the flip.</span>
+      <span class="char-count" id="char-count">0 / 300</span>
+    </div>
+  </footer>
+</div>
+
+<script>
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
+
+/* INSTALL */
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault(); deferredPrompt = e;
+  document.getElementById('install-banner').classList.add('show');
+});
+document.getElementById('install-btn').onclick = async () => {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  await deferredPrompt.userChoice;
+  deferredPrompt = null;
+  document.getElementById('install-banner').classList.remove('show');
+};
+document.getElementById('install-close').onclick = () => document.getElementById('install-banner').classList.remove('show');
+
+/* QUOTES */
+const QUOTES = [
+  { text: "What stands in the way becomes the way.", author: "Marcus Aurelius" },
+  { text: "Waste no more time arguing. Be one.", author: "Marcus Aurelius" },
+  { text: "We suffer more in imagination than in reality.", author: "Seneca" },
+  { text: "No man is free who is not master of himself.", author: "Epictetus" },
+  { text: "He who is brave is free.", author: "Seneca" },
+  { text: "Difficulties strengthen the mind, as labor does the body.", author: "Seneca" },
+  { text: "You have power over your mind, not outside events.", author: "Marcus Aurelius" },
+];
+
+/* SYSTEM PROMPT */
+const SYSTEM = `You are a motivational coach. Serious. Minimal. Positive. You ALWAYS respond directly to exactly what the person said.
+
+EXACT HARDCODED REPLIES:
+- "it's me vs me" → reply ONLY: "you finally understand."
+- "maybe in another life" → reply ONLY: "why not this one?"
+
+FOR "WHAT IF" DOUBTS — flip their exact words positive:
+- "what if I lose" → "what if you win?"
+- "what if I fail" → "what if you succeed?"
+- "what if I miss" → "what if you score?"
+- Always mirror their specific words and flip them.
+
+FOR EVERYTHING ELSE — read what they said and respond to IT specifically. Never ignore their words. Never give a random generic reply.
+
+RULES: Short replies. Simple words. Always positive. No emojis. No filler. Do not mention being an AI.`;
+
+/* STATE */
+let history = [], isLoading = false, sessionCount = 0;
+const chatEl = document.getElementById('chat');
+const landingEl = document.getElementById('landing');
+const inputEl = document.getElementById('user-input');
+const sendBtn = document.getElementById('send-btn');
+const charCount = document.getElementById('char-count');
+const sessionEl = document.getElementById('session-count');
+const streakEl = document.getElementById('streak-count');
+
+/* STREAK */
+try {
+  const today = new Date().toDateString();
+  const d = JSON.parse(localStorage.getItem('stoic_streak') || '{"count":0,"last":""}');
+  const yesterday = new Date(Date.now()-86400000).toDateString();
+  if (d.last !== today) { d.count = d.last===yesterday ? d.count+1 : 1; d.last=today; localStorage.setItem('stoic_streak',JSON.stringify(d)); }
+  streakEl.textContent = d.count;
+} catch(e) { streakEl.textContent = '–'; }
+
+/* LANDING */
+const q = QUOTES[Math.floor(Math.random()*QUOTES.length)];
+const heroEl = document.getElementById('hero-quote');
+const authorEl = document.getElementById('quote-author');
+const examplesEl = document.getElementById('examples-block');
+const EXAMPLES = ["what if I lose?","what if I fail?","it's me vs me.","maybe in another life.","what if I'm not ready?","what if it doesn't work?"];
+let qi = 0;
+function typeQuote() {
+  if (qi <= q.text.length) { heroEl.textContent = q.text.slice(0,qi); qi++; setTimeout(typeQuote, qi<5?40:26); }
+  else {
+    authorEl.textContent = '— '+q.author; authorEl.classList.add('visible');
+    EXAMPLES.forEach((ex,i) => { const el=document.createElement('div'); el.className='ex-item'; el.textContent=ex; el.style.animationDelay=(0.5+i*0.07)+'s'; examplesEl.appendChild(el); });
+  }
+}
+setTimeout(typeQuote, 400);
+
+/* INPUT */
+inputEl.addEventListener('input', () => {
+  inputEl.style.height='auto';
+  inputEl.style.height=Math.min(inputEl.scrollHeight,100)+'px';
+  charCount.textContent=inputEl.value.length+' / 300';
+});
+inputEl.addEventListener('keydown', e => { if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();handleSend();} });
+
+/* CHAT */
+function showChat() {
+  if (landingEl.style.display!=='none') { landingEl.style.display='none'; chatEl.style.display='flex'; chatEl.style.flexDirection='column'; }
+}
+
+function appendMsg(role, text) {
+  const wrap = document.createElement('div');
+  wrap.className = 'msg-wrap '+(role==='user'?'user-wrap':'stoic-wrap');
+  const meta = document.createElement('div'); meta.className='msg-meta';
+  const bar = document.createElement('div'); bar.className='msg-meta-bar';
+  const lbl = document.createElement('span'); lbl.textContent=role==='user'?'You':'Coach';
+  meta.appendChild(bar); meta.appendChild(lbl);
+  const body = document.createElement('div'); body.className='msg-text';
+  wrap.appendChild(meta); wrap.appendChild(body); chatEl.appendChild(wrap);
+  if (role==='stoic') {
+    const cursor=document.createElement('span'); cursor.className='cursor'; body.appendChild(cursor);
+    let ci=0; const chars=text.split('');
+    const speed=text.length<50?24:text.length<100?18:13;
+    function tick(){if(ci<chars.length){body.insertBefore(document.createTextNode(chars[ci]),cursor);ci++;chatEl.scrollTop=chatEl.scrollHeight;setTimeout(tick,speed);}else{cursor.remove();chatEl.scrollTop=chatEl.scrollHeight;}}
+    tick();
+  } else { body.textContent=text; chatEl.scrollTop=chatEl.scrollHeight; }
+}
+
+function showThinking() {
+  const w=document.createElement('div'); w.className='thinking-wrap'; w.id='thinking';
+  w.innerHTML='<div class="msg-meta"><div class="msg-meta-bar"></div><span>Coach</span></div><div class="thinking-inner"><div class="t-bar"></div><div class="t-bar"></div><div class="t-bar"></div></div>';
+  chatEl.appendChild(w); chatEl.scrollTop=chatEl.scrollHeight;
+}
+function hideThinking(){const el=document.getElementById('thinking');if(el)el.remove();}
+
+/* SEND — calls our secure Netlify function, API key never exposed */
+async function handleSend() {
+  const text = inputEl.value.trim();
+  if (!text || isLoading) return;
+  showChat(); isLoading=true; sendBtn.disabled=true;
+  inputEl.value=''; inputEl.style.height='auto'; charCount.textContent='0 / 300';
+  appendMsg('user', text);
+  history.push({ role:'user', content:text });
+  showThinking();
+  try {
+    const res = await fetch('/api/chat', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({ system:SYSTEM, messages:history })
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error.message);
+    const reply = data.content?.[0]?.text?.trim() || 'keep going.';
+    hideThinking();
+    history.push({ role:'assistant', content:reply });
+    appendMsg('stoic', reply);
+    sessionCount++; sessionEl.textContent=sessionCount;
+  } catch(err) {
+    hideThinking();
+    appendMsg('stoic', 'keep going.');
+  }
+  isLoading=false; sendBtn.disabled=false; inputEl.focus();
+}
+</script>
+</body>
+</html>
